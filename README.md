@@ -1,5 +1,7 @@
 # WebCast — 老电视局域网投屏（Android 4.3 / API18）
 
+**仓库**：[github.com/KawaiiHachimi/WebCast](https://github.com/KawaiiHachimi/WebCast) · **下载 APK**：[Releases](https://github.com/KawaiiHachimi/WebCast/releases/latest)
+
 给 **Android 4.3 电视**（本项目在Android 4.3 电视 上验证）用的局域网投屏接收端：
 电视端 App 启动后直接显示一个局域网 HTTPS 地址，并后台运行 Web 服务；**电脑上用 Chrome / Edge 打开这个地址、点「开始投屏」**，电视就能全屏显示电脑画面。
 
