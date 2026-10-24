@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>WebCast 投屏 · 电脑端发送</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">▶</span>
+        <div class="brand-text">
+          <h1>WebCast 投屏</h1>
+          <p class="sub">把电脑屏幕投到电视</p>
+        </div>
+      </div>
+      <div class="status" id="status">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-text">未连接</span>
+      </div>
+    </header>
+
+    <div id="compat-box" class="banner danger hidden" role="alert">
+      <strong>当前浏览器/环境无法运行发送端</strong>
+      <ul id="compat-list"></ul>
+    </div>
+
+    <div id="demo-box" class="banner info hidden">
+      演示模式：使用动画测试图代替屏幕采集（<code>?demo=1</code>）
+    </div>
+
+    <div id="error-box" class="banner danger hidden" role="alert">
+      <strong>出错了：</strong><span id="error-text"></span>
+    </div>
+
+    <div id="notice-box" class="banner warn hidden" role="status"></div>
+
+    <main class="grid">
+      <section class="card device-card">
+        <h2>电视</h2>
+        <div class="tv-head">
+          <div class="tv-name" id="tv-name">正在读取电视信息…</div>
+          <div class="tv-model" id="tv-model"></div>
+        </div>
+        <dl class="kv">
+          <div class="kv-row"><dt>地址</dt><dd id="tv-address">—</dd></div>
+          <div class="kv-row"><dt>屏幕</dt><dd id="tv-resolution">—</dd></div>
+          <div class="kv-row"><dt>可解码</dt><dd id="tv-codecs">—</dd></div>
+          <div class="kv-row"><dt>音频</dt><dd id="tv-audio">—</dd></div>
+        </dl>
+        <p class="hint" id="tv-hint">
+          地址打不开？请确认电视与电脑在同一 Wi-Fi、电视端投屏服务已启动。
+          首次访问需要在证书警告页点「高级 → 继续前往」。
+        </p>
+      </section>
+
+      <section class="card control-card">
+        <h2>投屏设置</h2>
+
+        <div class="field">
+          <label class="label" for="resolution-select">分辨率</label>
+          <select id="resolution-select">
+            <option value="1920x1080">1920×1080（默认）</option>
+            <option value="1600x900">1600×900</option>
+            <option value="1280x720">1280×720</option>
+            <option value="1024x576">1024×576</option>
+          </select>
+          <p class="hint" id="resolution-hint">电视最高支持的分辨率读取自 /api/info，超出能力的选项会自动禁用。</p>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label class="label" for="fps-select">帧率</label>
+            <select id="fps-select">
+              <option value="30">30 fps（默认）</option>
+              <option value="50">50 fps</option>
+              <option value="60">60 fps</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label" for="bitrate-select">码率</label>
+            <select id="bitrate-select">
+              <option value="auto">自动（推荐）</option>
+              <option value="2">2 Mbps</option>
+              <option value="4">4 Mbps</option>
+              <option value="6">6 Mbps</option>
+              <option value="8">8 Mbps</option>
+              <option value="10">10 Mbps</option>
+              <option value="12">12 Mbps</option>
+              <option value="16">16 Mbps</option>
+              <option value="20">20 Mbps</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint" id="bitrate-hint">当前使用 8 Mbps（自动推荐）</p>
+        <p class="hint" id="fps-hint">电视面板 60Hz，50/60fps 均可选；60fps 真机硬解实测 59–65fps、0 丢帧，动态更顺滑。</p>
+
+        <div class="field">
+          <label class="label" for="sound-select">声音</label>
+          <select id="sound-select">
+            <option value="none">关闭（仅画面）</option>
+            <option value="display">共享系统音频</option>
+            <option value="mic">使用麦克风</option>
+          </select>
+          <p class="hint" id="sound-hint">共享系统音频需要浏览器支持捕获标签页/系统声音；使用麦克风会额外请求权限。</p>
+        </div>
+
+        <div class="field">
+          <label class="label" for="overlay-toggle">投屏状态条</label>
+          <label class="switch-row">
+            <input type="checkbox" id="overlay-toggle" checked>
+            <span>在电视上显示投屏状态条（左上角 FPS / 码率）</span>
+          </label>
+          <p class="hint" id="overlay-hint">投屏中显示电视左上角状态条；关闭后电视只显示画面。</p>
+        </div>
+
+        <div class="actions">
+          <button id="start-btn" class="btn primary" type="button">开始投屏</button>
+          <button id="stop-btn" class="btn danger" type="button" disabled>停止投屏</button>
+        </div>
+
+        <p class="hint">
+          投屏中会持续占用编码器与网络，点击「停止投屏」或关闭本页即可结束。投屏过程中参数会锁定，停止后可再修改。
+        </p>
+      </section>
+
+      <section class="card stats-card">
+        <h2>实时状态</h2>
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-label">发送帧率</span>
+            <div><strong id="stat-fps">—</strong><span class="unit">fps</span></div>
+          </div>
+          <div class="stat">
+            <span class="stat-label">发送码率</span>
+            <div><strong id="stat-bitrate">—</strong><span class="unit">Mbps</span></div>
+          </div>
+          <div class="stat">
+            <span class="stat-label">电视解码</span>
+            <div><strong id="stat-tv-fps">—</strong><span class="unit">fps</span></div>
+          </div>
+          <div class="stat">
+            <span class="stat-label">延迟（估算）</span>
+            <div><strong id="stat-latency">—</strong><span class="unit">ms</span></div>
+          </div>
+          <div class="stat">
+            <span class="stat-label">关键帧</span>
+            <div><strong id="stat-keyframes">0</strong><span class="unit">个</span></div>
+          </div>
+          <div class="stat">
+            <span class="stat-label">跳过/丢帧</span>
+            <div><strong id="stat-drops">0</strong><span class="unit">帧</span></div>
+          </div>
+        </div>
+        <div class="meta-line">编码：<span id="encoder-info">—</span></div>
+        <div class="meta-line">音频：<span id="audio-info">未开启</span></div>
+        <div class="meta-line">电视端：<span id="tv-stat-info">尚未收到统计</span></div>
+      </section>
+
+      <section class="card preview-card">
+        <h2>画面预览 <span class="muted" id="preview-label">未开始</span></h2>
+        <div class="preview-stage" id="preview-stage">
+          <video id="preview-video" muted playsinline autoplay class="hidden"></video>
+          <canvas id="demo-canvas" width="1920" height="1080" class="hidden"></canvas>
+          <div class="preview-placeholder" id="preview-placeholder">
+            开始投屏后，这里显示电脑正在发送的画面
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>WebCast v1 · 电脑端发送网页（纯静态，无外部依赖）</span>
+      <span>需要 Chrome / Edge 94+，且页面通过 HTTPS 或 localhost 打开</span>
+    </footer>
+  </div>
+
+  <!-- 编码画布：按目标分辨率等比缩放、留黑边，仅用于生成 VideoFrame -->
+  <canvas id="encode-canvas" class="hidden"></canvas>
+
+  <script src="app.js"></script>
+</body>
+</html>

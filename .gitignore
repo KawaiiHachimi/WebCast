@@ -1,0 +1,9 @@
+local/
+build/
+dist/
+work/
+*.apk
+*.p12
+.DS_Store
+app/assets/tls/key.pk8
+app/assets/tls/cert.pem
